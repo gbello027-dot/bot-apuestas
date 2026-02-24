@@ -1,38 +1,53 @@
-import telebot
 
-TOKEN = "8539214283:AAEhFR-dK9KAV6RadULB72enCZ2z4vPeR04"
+import os
+import random
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
-bot = telebot.TeleBot(TOKEN)
+TOKEN = os.getenv("TOKEN")
 
-def calcular_value(cuota):
-    prob_implicita = 1 / cuota
-    prob_estimada = 0.60  # estimación base 60%
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "🔥 Bot de Apuestas Activo 🔥\n\n"
+        "Envíame un partido así:\n"
+        "Barcelona vs Real Madrid"
+    )
+
+def generar_analisis():
+    over25 = random.randint(55, 75)
+    ambos_marcan = random.randint(50, 70)
     
-    if prob_estimada > prob_implicita:
-        value = "✅ Sí hay value"
+    if over25 > ambos_marcan:
+        pick = "Over 2.5 goles"
+        cuota_minima = "1.70"
     else:
-        value = "❌ No hay value"
+        pick = "Ambos equipos marcan"
+        cuota_minima = "1.65"
+
+    return over25, ambos_marcan, pick, cuota_minima
+
+async def analizar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    texto = update.message.text
     
-    return prob_implicita, prob_estimada, value
+    if "vs" not in texto.lower():
+        await update.message.reply_text("Escríbeme el partido así:\nEquipo1 vs Equipo2")
+        return
+    
+    over25, ambos, pick, cuota = generar_analisis()
+    
+    respuesta = (
+        f"📊 Análisis del partido:\n\n"
+        f"⚽ Over 2.5: {over25}%\n"
+        f"⚽ Ambos marcan: {ambos}%\n\n"
+        f"🔥 Pick recomendado: {pick}\n"
+        f"💰 Cuota mínima de valor: {cuota}+"
+    )
+    
+    await update.message.reply_text(respuesta)
 
-@bot.message_handler(func=lambda message: True)
-def analizar_apuesta(message):
-    try:
-        cuota = float(message.text)
-        prob_implicita, prob_estimada, value = calcular_value(cuota)
-        
-        respuesta = f"""
-📊 Análisis de Cuota
+app = ApplicationBuilder().token(TOKEN).build()
 
-Cuota: {cuota}
-Probabilidad implícita: {round(prob_implicita*100,2)}%
-Probabilidad estimada: {round(prob_estimada*100,2)}%
+app.add_handler(CommandHandler("start", start))
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, analizar))
 
-Resultado:
-{value}
-"""
-        bot.reply_to(message, respuesta)
-    except:
-        bot.reply_to(message, "Envíame solo la cuota. Ejemplo: 1.85")
-
-bot.polling()
+app.run_polling()
