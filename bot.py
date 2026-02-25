@@ -4,7 +4,7 @@ import random
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
-TOKEN = os.getenv("TOKEN")
+TOKEN = os.getenv("8539214283:AAEhFR-dK9KAV6RadULB72enCZ2z4vPeR04")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
